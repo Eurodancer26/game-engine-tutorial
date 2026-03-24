@@ -3,14 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Заголовок подставляется из конфигурации HtmlWebpackPlugin -->
+    <!-- Заголовок подставляется из webpack конфига -->
     <title><%= htmlWebpackPlugin.options.title %></title>
 </head>
 <body>
-    <!-- Блок app: обёртка для всего содержимого, центрирует canvas -->
     <div class="app">
-        <!-- Блок canvas: игровой холст -->
-        <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+        <!-- Контейнер для позиционирования UI поверх canvas -->
+        <div class="game-container">
+            <!-- Игровой холст -->
+            <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+            <!-- Интерфейс: отображается поверх canvas -->
+            <div class="ui">
+                <div class="ui__stats">
+                    <div class="ui__stat">Столкновений: <span id="collisionCount">0</span></div>
+                    <div class="ui__stat">FPS: <span id="fpsValue">0</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>

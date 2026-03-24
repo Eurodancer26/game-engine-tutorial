@@ -1,0 +1,6 @@
+@use '../utils/variables' as *;
+
+// Контейнер для canvas и UI, обеспечивает относительное позиционирование
+.game-container {
+    position: relative;
+}

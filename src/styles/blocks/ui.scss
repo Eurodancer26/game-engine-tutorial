@@ -1,0 +1,26 @@
+@use '../utils/variables' as *;
+
+// Блок UI, который накладывается поверх canvas
+.ui {
+    position: absolute;      // позиционируется относительно .game-container
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    pointer-events: none;    // чтобы UI не перехватывал клики (кнопки пока не нужны)
+}
+
+// Группа статистики (столкновения, FPS)
+.ui__stats {
+    display: flex;
+    gap: 16px;
+}
+
+// Отдельный элемент статистики
+.ui__stat {
+    white-space: nowrap;     // чтобы текст не переносился
+}
