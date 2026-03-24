@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Заголовок подставляется из конфигурации HtmlWebpackPlugin -->
+    <title><%= htmlWebpackPlugin.options.title %></title>
+</head>
+<body>
+    <!-- Блок app: обёртка для всего содержимого, центрирует canvas -->
+    <div class="app">
+        <!-- Блок canvas: игровой холст -->
+        <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
+    </div>
+</body>
+</html>

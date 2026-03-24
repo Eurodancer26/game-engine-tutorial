@@ -1,0 +1,14 @@
+// Импортируем переменные из папки utils (поднимаемся на два уровня)
+// as * означает, что переменные будут доступны без префикса
+@use '../utils/variables' as *;
+
+.app {
+    // Минимальная высота на весь экран
+    min-height: 100vh;
+    // Используем flex для центрирования
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    // Фон из переменной
+    background-color: $bg-body;
+}

@@ -1,0 +1,8 @@
+@use '../utils/variables' as *;
+
+.canvas {
+    // Рамка: толщина, стиль, цвет
+    border: $canvas-border-width solid $border-canvas;
+    // Фон внутри canvas (если что-то не закрашено)
+    background-color: $bg-canvas;
+}
