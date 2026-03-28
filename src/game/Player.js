@@ -55,17 +55,24 @@ export class Player extends GameObject {
         this.vy += this.gravity * deltaTime;
         this.y += this.vy * deltaTime;
 
+        // ... внутри update после движения по Y
+
         let onGround = false;
-        // Проверка столкновений по Y
         for (const platform of platforms) {
             if (this.collidesWith(platform)) {
+                // Если платформа односторонняя и игрок движется вверх (vy < 0), то пропускаем столкновение
+                if (platform.oneWay && this.vy < 0) {
+                    continue;   // игрок проходит сквозь снизу
+                }
+
+                // Падаем вниз (vy > 0) -> ставим на платформу
                 if (this.vy > 0) {
-                    // Падаем вниз -> ставим на платформу
                     this.y = platform.y - this.height;
                     this.vy = 0;
                     onGround = true;
-                } else if (this.vy < 0) {
-                    // Поднимаемся вверх -> ударяемся головой
+                }
+                // Поднимаемся вверх (vy < 0) -> прижимаем к низу (если платформа двусторонняя)
+                else if (this.vy < 0) {
                     this.y = platform.y + platform.height;
                     this.vy = 0;
                 }

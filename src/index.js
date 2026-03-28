@@ -47,15 +47,15 @@ const enemy2 = new Enemy(
 entityManager.add(enemy2);
 
 // --- Создаём платформы ---
-// Пол (нижняя платформа)
-const ground = new Platform(0, canvas.height - 40, canvas.width, 40, '#555');
+// Пол (нижняя платформа) – двусторонняя, чтобы игрок не падал сквозь пол
+const ground = new Platform(0, canvas.height - 40, canvas.width, 40, '#555', false);
 entityManager.add(ground);
 
-// Две платформы в воздухе
-const platform1 = new Platform(300, 400, 150, 20, '#888');
+// Две платформы в воздухе – односторонние (можно прыгать снизу)
+const platform1 = new Platform(400, 400, 150, 20, '#888', true);
 entityManager.add(platform1);
 
-const platform2 = new Platform(500, 300, 150, 20, '#888');
+const platform2 = new Platform(500, 300, 150, 20, '#888', true);
 entityManager.add(platform2);
 
 // Обработчик ввода

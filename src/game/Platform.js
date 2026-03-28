@@ -1,21 +1,17 @@
 import { GameObject } from './GameObject';
 
 /**
- * Платформа — статичный объект, на который можно встать.
- * Не имеет собственной логики движения (vx, vy = 0), только коллизия и отрисовка.
+ * Платформа — статичный объект, на который можно вставать.
+ * @param {number} x
+ * @param {number} y
+ * @param {number} width
+ * @param {number} height
+ * @param {string} color
+ * @param {boolean} oneWay - true = односторонняя (можно пройти снизу вверх), false = двусторонняя
  */
 export class Platform extends GameObject {
-    /**
-     * @param {number} x - координата X верхнего левого угла
-     * @param {number} y - координата Y верхнего левого угла
-     * @param {number} width - ширина
-     * @param {number} height - высота
-     * @param {string} color - цвет платформы (по умолчанию серый)
-     */
-    constructor(x, y, width, height, color = '#888') {
+    constructor(x, y, width, height, color = '#888', oneWay = true) {
         super(x, y, width, height, color);
-        // Платформы не двигаются, поэтому vx, vy остаются 0 (уже установлены в родителе)
+        this.oneWay = oneWay;   // сохраняем свойство односторонности
     }
-
-    // Метод update не переопределяем — он остаётся пустым из GameObject
 }
