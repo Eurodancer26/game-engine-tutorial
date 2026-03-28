@@ -1,0 +1,106 @@
+@use '../utils/variables' as *;
+
+.app {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background-color: $bg-body;
+    min-height: 100vh;
+    align-items: flex-start;
+}
+
+.game-area {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.control-panel {
+    width: 320px;
+    background: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: sans-serif;
+    font-size: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+    pointer-events: auto;
+
+    &__section {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #555;
+        padding-bottom: 10px;
+
+        h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label {
+            display: block;
+            margin: 5px 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 8px;
+            background: #3a6ea5;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+
+            &:hover {
+                background: #2c4e7a;
+            }
+        }
+    }
+
+    &__list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 8px;
+    }
+
+    &__item {
+        background: #333;
+        padding: 6px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        font-size: 11px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        align-items: center;
+
+        &-controls {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+
+        input {
+            width: 50px;
+            background: #555;
+            color: white;
+            border: none;
+            padding: 2px;
+            border-radius: 3px;
+        }
+
+        button {
+            width: auto;
+            margin: 0;
+            padding: 2px 6px;
+            background: #a53a3a;
+        }
+    }
+}

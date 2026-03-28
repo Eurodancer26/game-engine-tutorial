@@ -58,6 +58,174 @@ entityManager.add(platform1);
 const platform2 = new Platform(500, 300, 150, 20, '#888', true);
 entityManager.add(platform2);
 
+// --- Управление игроком ---
+const playerSpeedSlider = document.getElementById('playerSpeed');
+const playerJumpSlider = document.getElementById('playerJump');
+const playerWidthSlider = document.getElementById('playerWidth');
+const playerHeightSlider = document.getElementById('playerHeight');
+const playerYSlider = document.getElementById('playerY');
+const resetPlayerPosBtn = document.getElementById('resetPlayerPos');
+
+playerSpeedSlider.value = player.speed;
+playerJumpSlider.value = player.jumpForce;
+playerWidthSlider.value = player.width;
+playerHeightSlider.value = player.height;
+playerYSlider.value = player.y;
+
+playerSpeedSlider.addEventListener('input', (e) => {
+    player.speed = parseInt(e.target.value);
+});
+playerJumpSlider.addEventListener('input', (e) => {
+    player.jumpForce = parseInt(e.target.value);
+});
+playerWidthSlider.addEventListener('input', (e) => {
+    const newWidth = parseInt(e.target.value);
+    const delta = newWidth - player.width;
+    player.width = newWidth;
+    // Корректируем позицию, чтобы центр не смещался (опционально)
+    player.x -= delta / 2;
+});
+playerHeightSlider.addEventListener('input', (e) => {
+    const newHeight = parseInt(e.target.value);
+    const delta = newHeight - player.height;
+    player.height = newHeight;
+    player.y -= delta; // смещаем вверх, чтобы игрок не уходил под землю
+    // Ограничиваем Y
+    if (player.y < 0) player.y = 0;
+    if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+});
+playerYSlider.addEventListener('input', (e) => {
+    let newY = parseInt(e.target.value);
+    if (newY < 0) newY = 0;
+    if (newY + player.height > canvas.height) newY = canvas.height - player.height;
+    player.y = newY;
+});
+resetPlayerPosBtn.addEventListener('click', () => {
+    player.x = canvas.width / 2 - player.width / 2;
+    player.y = canvas.height / 2 - player.height / 2;
+    playerYSlider.value = player.y;
+});
+
+// --- Функции обновления списков ---
+function renderEnemiesList() {
+    const enemies = entityManager.getEntitiesByType(Enemy);
+    const countSpan = document.getElementById('enemiesCount');
+    const container = document.getElementById('enemiesList');
+    countSpan.textContent = enemies.length;
+    container.innerHTML = '';
+    enemies.forEach((enemy, index) => {
+        const div = document.createElement('div');
+        div.className = 'control-panel__item';
+        div.innerHTML = `
+            <span>Враг ${index + 1}</span>
+            <div class="control-panel__item-controls">
+                <label>X: <input type="number" class="enemy-x" data-index="${index}" value="${Math.round(enemy.x)}" step="5"></label>
+                <label>Y: <input type="number" class="enemy-y" data-index="${index}" value="${Math.round(enemy.y)}" step="5"></label>
+                <label>W: <input type="number" class="enemy-w" data-index="${index}" value="${enemy.width}" step="5"></label>
+                <label>H: <input type="number" class="enemy-h" data-index="${index}" value="${enemy.height}" step="5"></label>
+                <button class="delete-enemy" data-index="${index}">Удалить</button>
+            </div>
+        `;
+        container.appendChild(div);
+
+        // Обработчики для полей
+        const xInput = div.querySelector('.enemy-x');
+        const yInput = div.querySelector('.enemy-y');
+        const wInput = div.querySelector('.enemy-w');
+        const hInput = div.querySelector('.enemy-h');
+        const delBtn = div.querySelector('.delete-enemy');
+
+        xInput.addEventListener('change', (e) => {
+            enemy.x = parseInt(e.target.value);
+        });
+        yInput.addEventListener('change', (e) => {
+            enemy.y = parseInt(e.target.value);
+        });
+        wInput.addEventListener('change', (e) => {
+            enemy.width = parseInt(e.target.value);
+        });
+        hInput.addEventListener('change', (e) => {
+            enemy.height = parseInt(e.target.value);
+        });
+        delBtn.addEventListener('click', () => {
+            entityManager.remove(enemy);
+            renderEnemiesList();
+            renderPlatformsList(); // обновляем платформы (не обязательно, но для единообразия)
+        });
+    });
+}
+
+function renderPlatformsList() {
+    const platforms = entityManager.getEntitiesByType(Platform);
+    const countSpan = document.getElementById('platformsCount');
+    const container = document.getElementById('platformsList');
+    countSpan.textContent = platforms.length;
+    container.innerHTML = '';
+    platforms.forEach((platform, index) => {
+        const div = document.createElement('div');
+        div.className = 'control-panel__item';
+        div.innerHTML = `
+            <span>Платформа ${index + 1}</span>
+            <div class="control-panel__item-controls">
+                <label>X: <input type="number" class="platform-x" data-index="${index}" value="${Math.round(platform.x)}" step="5"></label>
+                <label>Y: <input type="number" class="platform-y" data-index="${index}" value="${Math.round(platform.y)}" step="5"></label>
+                <label>W: <input type="number" class="platform-w" data-index="${index}" value="${platform.width}" step="5"></label>
+                <label>H: <input type="number" class="platform-h" data-index="${index}" value="${platform.height}" step="5"></label>
+                <button class="delete-platform" data-index="${index}">Удалить</button>
+            </div>
+        `;
+        container.appendChild(div);
+
+        const xInput = div.querySelector('.platform-x');
+        const yInput = div.querySelector('.platform-y');
+        const wInput = div.querySelector('.platform-w');
+        const hInput = div.querySelector('.platform-h');
+        const delBtn = div.querySelector('.delete-platform');
+
+        xInput.addEventListener('change', (e) => {
+            platform.x = parseInt(e.target.value);
+        });
+        yInput.addEventListener('change', (e) => {
+            platform.y = parseInt(e.target.value);
+        });
+        wInput.addEventListener('change', (e) => {
+            platform.width = parseInt(e.target.value);
+        });
+        hInput.addEventListener('change', (e) => {
+            platform.height = parseInt(e.target.value);
+        });
+        delBtn.addEventListener('click', () => {
+            entityManager.remove(platform);
+            renderPlatformsList();
+            renderEnemiesList();
+        });
+    });
+}
+
+// --- Добавление врагов и платформ (с обновлением списков) ---
+const addEnemyBtn = document.getElementById('addEnemy');
+const addPlatformBtn = document.getElementById('addPlatform');
+
+addEnemyBtn.addEventListener('click', () => {
+    const x = Math.random() * (canvas.width - 40);
+    const y = Math.random() * (canvas.height - 40);
+    const newEnemy = new Enemy(x, y, 40, 40, 200, canvas.width, canvas.height);
+    entityManager.add(newEnemy);
+    renderEnemiesList();
+});
+
+addPlatformBtn.addEventListener('click', () => {
+    const x = Math.random() * (canvas.width - 100);
+    const y = Math.random() * (canvas.height - 50);
+    const newPlatform = new Platform(x, y, 100, 20, '#888', true);
+    entityManager.add(newPlatform);
+    renderPlatformsList();
+});
+
+// Первоначальная отрисовка списков
+renderEnemiesList();
+renderPlatformsList();
+
 // Обработчик ввода
 const input = new Input();
 
@@ -108,6 +276,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     entityManager.draw(ctx);
 }
+
 
 /**
  * Основной игровой цикл, вызывается браузером через requestAnimationFrame.

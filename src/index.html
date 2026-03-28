@@ -3,21 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Заголовок подставляется из webpack конфига -->
     <title><%= htmlWebpackPlugin.options.title %></title>
 </head>
 <body>
     <div class="app">
-        <!-- Контейнер для позиционирования UI поверх canvas -->
-        <div class="game-container">
-            <!-- Игровой холст -->
+        <!-- Контейнер для canvas (игровая область) -->
+        <div class="game-area">
             <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
-            <!-- Интерфейс: отображается поверх canvas -->
+            <!-- Старый UI (счётчик, FPS) остаётся -->
             <div class="ui">
                 <div class="ui__stats">
                     <div class="ui__stat">Столкновений: <span id="collisionCount">0</span></div>
                     <div class="ui__stat">FPS: <span id="fpsValue">0</span></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Новая панель управления -->
+        <div class="control-panel">
+            <!-- Управление игроком -->
+            <div class="control-panel__section">
+                <h3>Игрок</h3>
+                <label>Скорость: <input type="range" id="playerSpeed" min="0" max="600" step="10"></label>
+                <label>Сила прыжка: <input type="range" id="playerJump" min="0" max="800" step="10"></label>
+                <label>Ширина: <input type="range" id="playerWidth" min="20" max="100" step="5"></label>
+                <label>Высота: <input type="range" id="playerHeight" min="20" max="100" step="5"></label>
+                <label>Y позиция: <input type="range" id="playerY" min="0" max="560" step="5"></label>
+                <button id="resetPlayerPos">Сбросить позицию</button>
+            </div>
+
+            <!-- Список врагов -->
+            <div class="control-panel__section">
+                <h3>Враги (<span id="enemiesCount">0</span>)</h3>
+                <button id="addEnemy">+ Добавить врага</button>
+                <div id="enemiesList" class="control-panel__list"></div>
+            </div>
+
+            <!-- Список платформ -->
+            <div class="control-panel__section">
+                <h3>Платформы (<span id="platformsCount">0</span>)</h3>
+                <button id="addPlatform">+ Добавить платформу</button>
+                <div id="platformsList" class="control-panel__list"></div>
             </div>
         </div>
     </div>
