@@ -19,8 +19,11 @@ const entityManager = new EntityManager();
 const player = new Player(
     canvas.width / 2 - 25,
     canvas.height / 2 - 25,
-    50, 50, 300,
-    canvas.width, canvas.height
+    50, 50,
+    300,   // speed
+    400,   // jumpForce
+    canvas.width,
+    canvas.height
 );
 entityManager.add(player);
 
