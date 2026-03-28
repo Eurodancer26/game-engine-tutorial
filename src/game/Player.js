@@ -1,73 +1,95 @@
 import { GameObject } from './GameObject';
+import { Platform } from './Platform';
 
 export class Player extends GameObject {
-    /**
-     * @param {number} x - начальная координата X
-     * @param {number} y - начальная координата Y
-     * @param {number} width - ширина
-     * @param {number} height - высота
-     * @param {number} speed - горизонтальная скорость (пиксели/сек)
-     * @param {number} jumpForce - сила прыжка (отрицательная вертикальная скорость)
-     * @param {number} canvasWidth - ширина поля
-     * @param {number} canvasHeight - высота поля
-     */
     constructor(x, y, width, height, speed, jumpForce, canvasWidth, canvasHeight) {
         super(x, y, width, height, '#0f0');
         this.speed = speed;
-        this.jumpForce = jumpForce;   // сила прыжка (положительное число, будет преобразовано в отрицательную скорость)
+        this.jumpForce = jumpForce;
         this.canvasWidth = canvasWidth;
         this.canvasHeight = canvasHeight;
 
-        this.gravity = 800;           // ускорение свободного падения (пиксели/сек²)
-        this.vy = 0;                  // вертикальная скорость
-        this.isOnGround = false;      // флаг: находится ли игрок на земле (полу/платформе)
+        this.gravity = 800;
+        this.vy = 0;
+        this.isOnGround = false;
     }
 
-    update(deltaTime, input) {
-        // --- Горизонтальное управление ---
+    /**
+     * Обновление игрока.
+     * @param {number} deltaTime - время в секундах с прошлого кадра
+     * @param {Object} input - состояние клавиш
+     * @param {Array} entities - все объекты в игре (нужны для поиска платформ)
+     */
+    update(deltaTime, input, entities) {
+        // --- 1. Горизонтальное движение ---
         let moveX = 0;
         if (input.ArrowLeft) moveX = -1;
         if (input.ArrowRight) moveX = 1;
-
-        // Нормализация диагонали (горизонталь + вертикаль) – пока только горизонталь
-        // (вертикальное управление стрелкой вверх/вниз не нужно, т.к. прыжок отдельно)
-        // Но если вы хотите оставить возможность ручного перемещения по вертикали (для тестов), 
-        // то можно оставить, но обычно в платформерах вертикаль только от прыжка/гравитации.
-        // Для простоты убираем управление по Y.
         this.vx = moveX * this.speed;
         this.x += this.vx * deltaTime;
 
-        // --- Прыжок (только если на земле) ---
-        if (input.ArrowUp && this.isOnGround) {
-            this.vy = -this.jumpForce;   // задаём отрицательную скорость (вверх)
-            this.isOnGround = false;     // больше не на земле
+        // Получаем все платформы из списка сущностей
+        const platforms = entities.filter(e => e instanceof Platform);
+
+        // Коррекция по X: если столкнулись с платформой, отодвигаем
+        for (const platform of platforms) {
+            if (this.collidesWith(platform)) {
+                if (this.vx > 0) {
+                    // Двигались вправо -> прижимаем к левому краю платформы
+                    this.x = platform.x - this.width;
+                } else if (this.vx < 0) {
+                    // Двигались влево -> прижимаем к правому краю
+                    this.x = platform.x + platform.width;
+                }
+                // Если vx === 0, то игрок уже стоит вплотную, ничего не делаем
+            }
         }
 
-        // --- Вертикальная физика ---
-        this.vy += this.gravity * deltaTime;   // ускоряем вниз
-        this.y += this.vy * deltaTime;         // перемещаем
+        // --- 2. Прыжок ---
+        if (input.ArrowUp && this.isOnGround) {
+            this.vy = -this.jumpForce;
+            this.isOnGround = false;
+        }
 
-        // --- Ограничение границами canvas ---
-        // По горизонтали
+        // --- 3. Вертикальное движение ---
+        this.vy += this.gravity * deltaTime;
+        this.y += this.vy * deltaTime;
+
+        let onGround = false;
+        // Проверка столкновений по Y
+        for (const platform of platforms) {
+            if (this.collidesWith(platform)) {
+                if (this.vy > 0) {
+                    // Падаем вниз -> ставим на платформу
+                    this.y = platform.y - this.height;
+                    this.vy = 0;
+                    onGround = true;
+                } else if (this.vy < 0) {
+                    // Поднимаемся вверх -> ударяемся головой
+                    this.y = platform.y + platform.height;
+                    this.vy = 0;
+                }
+            }
+        }
+
+        // --- 4. Ограничения границами canvas ---
+        // Горизонталь
         if (this.x < 0) this.x = 0;
         if (this.x + this.width > this.canvasWidth) this.x = this.canvasWidth - this.width;
 
-        // По вертикали
-        // Пол (нижняя граница)
+        // Нижняя граница (пол)
         if (this.y + this.height > this.canvasHeight) {
             this.y = this.canvasHeight - this.height;
             this.vy = 0;
-            this.isOnGround = true;
+            onGround = true;
         }
-        // Потолок (верхняя граница) – опционально
-        else if (this.y < 0) {
+        // Верхняя граница (потолок)
+        if (this.y < 0) {
             this.y = 0;
             this.vy = 0;
-            this.isOnGround = false;
+            onGround = false;
         }
-        else {
-            // Если не касаемся пола и не потолка, то мы в воздухе
-            this.isOnGround = false;
-        }
+
+        this.isOnGround = onGround;
     }
 }

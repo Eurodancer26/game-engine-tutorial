@@ -47,4 +47,26 @@ export class EntityManager {
     getEntitiesByType(type) {
         return this.entities.filter(entity => entity instanceof type);
     }
+
+    /**
+     * Возвращает копию массива всех сущностей.
+     * @returns {Array}
+     */
+    getAllEntities() {
+        return [...this.entities];
+    }
+
+    /**
+     * Обновляет все сущности, передавая им deltaTime, input и список всех сущностей.
+     * @param {number} deltaTime
+     * @param {Object} input
+     */
+    update(deltaTime, input) {
+        const allEntities = this.getAllEntities();  // получаем список всех объектов
+        for (const entity of this.entities) {
+            if (entity.update) {
+                entity.update(deltaTime, input, allEntities);
+            }
+        }
+    }
 }

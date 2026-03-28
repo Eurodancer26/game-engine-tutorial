@@ -6,6 +6,7 @@ import { Player } from './game/Player';
 import { Enemy } from './game/Enemy';
 import { Input } from './game/Input';
 import { EntityManager } from './game/EntityManager';
+import { Platform } from './game/Platform';
 
 // Получаем ссылку на canvas и контекст рисования
 const canvas = document.getElementById('gameCanvas');
@@ -16,12 +17,13 @@ const entityManager = new EntityManager();
 
 // --- Создание игрока ---
 // Параметры: x, y, ширина, высота, скорость (пиксели/сек), ширина и высота canvas
+// --- Создаём игрока с jumpForce ---
 const player = new Player(
     canvas.width / 2 - 25,
     canvas.height / 2 - 25,
     50, 50,
     300,   // speed
-    400,   // jumpForce
+    500,   // jumpForce
     canvas.width,
     canvas.height
 );
@@ -38,11 +40,23 @@ entityManager.add(enemy1);
 
 // Второй враг: (500,300), скорость -200 (влево)
 const enemy2 = new Enemy(
-    500, 300,
+    500, 150,
     40, 40, -200,
     canvas.width, canvas.height
 );
 entityManager.add(enemy2);
+
+// --- Создаём платформы ---
+// Пол (нижняя платформа)
+const ground = new Platform(0, canvas.height - 40, canvas.width, 40, '#555');
+entityManager.add(ground);
+
+// Две платформы в воздухе
+const platform1 = new Platform(300, 400, 150, 20, '#888');
+entityManager.add(platform1);
+
+const platform2 = new Platform(500, 300, 150, 20, '#888');
+entityManager.add(platform2);
 
 // Обработчик ввода
 const input = new Input();
