@@ -19,3 +19,6 @@ Thumbs.db
 # Файлы окружения
 .env
 .env.local
+
+# Журнал разработки
+Co-development-AI.md
