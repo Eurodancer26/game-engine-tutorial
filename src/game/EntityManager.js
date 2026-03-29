@@ -1,3 +1,6 @@
+/**
+ * Управляет коллекцией игровых объектов.
+ */
 export class EntityManager {
     constructor() {
         this.entities = [];
@@ -16,11 +19,18 @@ export class EntityManager {
         return [...this.entities];
     }
 
-    update(deltaTime, input) {
+    /**
+     * Обновляет все сущности.
+     * @param {number} deltaTime
+     * @param {Object} input
+     * @param {TileMap} tileMap - карта тайлов для коллизий
+     */
+    update(deltaTime, input, tileMap) {
         const allEntities = this.getAllEntities();
         for (const entity of this.entities) {
             if (entity.update) {
-                entity.update(deltaTime, input, allEntities);
+                // Передаём tileMap всем объектам (игроку и врагам)
+                entity.update(deltaTime, input, allEntities, tileMap);
             }
         }
     }

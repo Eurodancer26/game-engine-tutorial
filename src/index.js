@@ -16,7 +16,6 @@ const tileset = {
     2: '#888',
     3: '#aaa',
 };
-// Простая карта 20x15 (пол и стены)
 const mapData = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -40,7 +39,7 @@ const worldHeight = tileMap.height;
 
 const entityManager = new EntityManager();
 
-// Игрок (начнём выше пола)
+// Игрок
 const player = new Player(
     worldWidth / 2 - 25,
     worldHeight / 2 - 100,
@@ -49,15 +48,13 @@ const player = new Player(
 );
 entityManager.add(player);
 
-// Враги (пока без коллизий с тайлами)
+// Враги
 const enemy1 = new Enemy(100, 100, 40, 40, 200, worldWidth, worldHeight);
 entityManager.add(enemy1);
 const enemy2 = new Enemy(500, 300, 40, 40, -200, worldWidth, worldHeight);
 entityManager.add(enemy2);
-const enemy3 = new Enemy(1200, 800, 40, 40, 150, worldWidth, worldHeight);
-entityManager.add(enemy3);
-
-// Платформы больше не добавляем, используем тайлы
+// const enemy3 = new Enemy(1200, 800, 40, 40, 150, worldWidth, worldHeight);
+// entityManager.add(enemy3);
 
 const input = new Input();
 const camera = new Camera(canvas.width, canvas.height, worldWidth, worldHeight);
@@ -73,7 +70,7 @@ let lastTime = performance.now();
 
 function update(deltaSec) {
     camera.follow(player);
-    entityManager.update(deltaSec, input.getState());
+    entityManager.update(deltaSec, input.getState(), tileMap);
 
     const enemies = entityManager.getEntitiesByType(Enemy);
     for (const enemy of enemies) {

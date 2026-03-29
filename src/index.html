@@ -2,15 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title><%= htmlWebpackPlugin.options.title %></title>
 </head>
 <body>
     <div class="app">
-        <!-- Контейнер для canvas (игровая область) -->
+        <!-- Игровая область -->
         <div class="game-area">
             <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
-            <!-- Старый UI (счётчик, FPS) остаётся -->
+            <!-- Статистика (счётчик, FPS) -->
             <div class="ui">
                 <div class="ui__stats">
                     <div class="ui__stat">Столкновений: <span id="collisionCount">0</span></div>
@@ -19,9 +19,9 @@
             </div>
         </div>
 
-        <!-- Новая панель управления -->
+        <!-- Панель управления (без платформ) -->
         <div class="control-panel">
-            <!-- Управление игроком -->
+            <!-- Секция: Игрок -->
             <div class="control-panel__section">
                 <h3>Игрок</h3>
                 <label>Скорость: <input type="range" id="playerSpeed" min="0" max="600" step="10"></label>
@@ -32,18 +32,11 @@
                 <button id="resetPlayerPos">Сбросить позицию</button>
             </div>
 
-            <!-- Список врагов -->
+            <!-- Секция: Враги -->
             <div class="control-panel__section">
                 <h3>Враги (<span id="enemiesCount">0</span>)</h3>
                 <button id="addEnemy">+ Добавить врага</button>
                 <div id="enemiesList" class="control-panel__list"></div>
-            </div>
-
-            <!-- Список платформ -->
-            <div class="control-panel__section">
-                <h3>Платформы (<span id="platformsCount">0</span>)</h3>
-                <button id="addPlatform">+ Добавить платформу</button>
-                <div id="platformsList" class="control-panel__list"></div>
             </div>
         </div>
     </div>
