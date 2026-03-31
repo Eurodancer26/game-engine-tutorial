@@ -2,7 +2,7 @@ import { GameObject } from './GameObject';
 
 /**
  * Класс игрока. Управляется стрелками, имеет гравитацию и прыжки.
- * Поддерживает коллизии с тайловой картой (твёрдые тайлы).
+ * Использует проекцию движения (sweep) для точных коллизий.
  */
 export class Player extends GameObject {
     /**
@@ -11,7 +11,7 @@ export class Player extends GameObject {
      * @param {number} width - ширина
      * @param {number} height - высота
      * @param {number} speed - горизонтальная скорость (пиксели/сек)
-     * @param {number} jumpForce - сила прыжка (положительная, будет преобразована в отрицательную скорость)
+     * @param {number} jumpForce - сила прыжка (положительная)
      * @param {number} worldWidth - ширина мира
      * @param {number} worldHeight - высота мира
      */
@@ -34,37 +34,45 @@ export class Player extends GameObject {
      * @param {TileMap} tileMap - карта тайлов для коллизий
      */
     update(deltaTime, input, entities, tileMap) {
-        // --- Горизонтальное движение ---
+        // --- Горизонтальное движение с проекцией ---
         let moveX = 0;
         if (input.ArrowLeft) moveX = -1;
         if (input.ArrowRight) moveX = 1;
         this.vx = moveX * this.speed;
-        let newX = this.x + this.vx * deltaTime;
-        this.x = this.resolveCollisionX(newX, this.y, this.width, this.height, tileMap);
+        const dx = this.vx * deltaTime;
+        const newX = this.x + dx;
 
-        // --- Прыжок (только если на земле) ---
+        // Проверяем коллизию по X до перемещения
+        const xStep = this.checkCollisionX(newX, this.y, this.width, this.height, tileMap);
+        this.x += xStep;
+
+        // --- Прыжок ---
         if (input.ArrowUp && this.isOnGround) {
             this.vy = -this.jumpForce;
             this.isOnGround = false;
         }
 
-        // --- Вертикальное движение ---
-        // Если игрок на земле, не добавляем гравитацию (чтобы не накапливать скорость)
+        // --- Вертикальное движение с проекцией ---
         if (!this.isOnGround) {
             this.vy += this.gravity * deltaTime;
         } else {
-            this.vy = 0; // явно обнуляем скорость на земле
-        }
-
-        let newY = this.y + this.vy * deltaTime;
-        const yResult = this.resolveCollisionY(this.x, newY, this.width, this.height, tileMap);
-        this.y = yResult.newY;
-        this.vy = yResult.newVy;
-        this.isOnGround = yResult.onGround;
-
-        // Дополнительная стабилизация: если после коррекции игрок на земле, обнуляем vy ещё раз
-        if (this.isOnGround) {
             this.vy = 0;
+        }
+        const dy = this.vy * deltaTime;
+        const newY = this.y + dy;
+
+        const yStep = this.checkCollisionY(this.x, newY, this.width, this.height, tileMap);
+        this.y += yStep;
+
+        // Определяем, на земле ли игрок (проверяем тайл под ногами)
+        if (this.vy >= 0) {
+            const feetY = this.y + this.height;
+            const row = Math.floor(feetY / tileMap.tileHeight);
+            const col = Math.floor(this.x / tileMap.tileWidth);
+            const tileBelow = tileMap.getTileAt(col * tileMap.tileWidth, row * tileMap.tileHeight);
+            this.isOnGround = tileMap.isSolidTile(tileBelow);
+        } else {
+            this.isOnGround = false;
         }
 
         // --- Ограничения границами мира (страховка) ---
@@ -75,58 +83,60 @@ export class Player extends GameObject {
     }
 
     /**
-     * Коррекция горизонтальной позиции с учётом коллизий.
-     * @param {number} newX
-     * @param {number} y
-     * @param {number} w
-     * @param {number} h
+     * Проекция движения по X.
+     * Возвращает реальное смещение (dx), которое безопасно.
+     * @param {number} newX - желаемая новая X
+     * @param {number} y - текущая Y
+     * @param {number} w - ширина
+     * @param {number} h - высота
      * @param {TileMap} tileMap
-     * @returns {number} скорректированная X
+     * @returns {number} безопасное приращение X
      */
-    resolveCollisionX(newX, y, w, h, tileMap) {
+    checkCollisionX(newX, y, w, h, tileMap) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
         const leftTile = Math.floor(newX / tileW);
         const rightTile = Math.floor((newX + w - 1) / tileW);
         const topTile = Math.floor(y / tileH);
         const bottomTile = Math.floor((y + h - 1) / tileH);
-        let resolvedX = newX;
+        let move = newX - this.x;
+
         for (let row = topTile; row <= bottomTile; row++) {
             for (let col = leftTile; col <= rightTile; col++) {
                 const tileId = tileMap.getTileAt(col * tileW, row * tileH);
                 if (tileMap.isSolidTile(tileId)) {
                     const tileLeft = col * tileW;
                     const tileRight = tileLeft + tileW;
-                    if (this.vx > 0) {
-                        resolvedX = tileLeft - w;
-                    } else if (this.vx < 0) {
-                        resolvedX = tileRight;
+                    if (move > 0) {
+                        // движение вправо
+                        move = Math.min(move, tileLeft - this.x - w);
+                    } else if (move < 0) {
+                        // движение влево
+                        move = Math.max(move, tileRight - this.x);
                     }
                 }
             }
         }
-        return resolvedX;
+        return move;
     }
 
     /**
-     * Коррекция вертикальной позиции с учётом коллизий.
-     * @param {number} x
-     * @param {number} newY
-     * @param {number} w
-     * @param {number} h
+     * Проекция движения по Y.
+     * @param {number} x - текущая X
+     * @param {number} newY - желаемая новая Y
+     * @param {number} w - ширина
+     * @param {number} h - высота
      * @param {TileMap} tileMap
-     * @returns {{newY: number, newVy: number, onGround: boolean}}
+     * @returns {number} безопасное приращение Y
      */
-    resolveCollisionY(x, newY, w, h, tileMap) {
+    checkCollisionY(x, newY, w, h, tileMap) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
         const leftTile = Math.floor(x / tileW);
         const rightTile = Math.floor((x + w - 1) / tileW);
         const topTile = Math.floor(newY / tileH);
         const bottomTile = Math.floor((newY + h - 1) / tileH);
-        let resolvedY = newY;
-        let onGround = false;
-        let newVy = this.vy;
+        let move = newY - this.y;
 
         for (let row = topTile; row <= bottomTile; row++) {
             for (let col = leftTile; col <= rightTile; col++) {
@@ -134,21 +144,16 @@ export class Player extends GameObject {
                 if (tileMap.isSolidTile(tileId)) {
                     const tileTop = row * tileH;
                     const tileBottom = tileTop + tileH;
-                    if (this.vy > 0) {
-                        resolvedY = tileTop - h;
-                        onGround = true;
-                        newVy = 0;
-                    } else if (this.vy < 0) {
-                        resolvedY = tileBottom;
-                        newVy = 0;
+                    if (move > 0) {
+                        // падение
+                        move = Math.min(move, tileTop - this.y - h);
+                    } else if (move < 0) {
+                        // подъём
+                        move = Math.max(move, tileBottom - this.y);
                     }
                 }
             }
         }
-        // Добавляем эпсилон, чтобы игрок не "дрожал" на границе тайла
-        if (onGround && resolvedY + h <= tileMap.height) {
-            resolvedY += 0.01;
-        }
-        return { newY: resolvedY, newVy, onGround };
+        return move;
     }
 }

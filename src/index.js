@@ -53,8 +53,6 @@ const enemy1 = new Enemy(100, 100, 40, 40, 200, worldWidth, worldHeight);
 entityManager.add(enemy1);
 const enemy2 = new Enemy(500, 300, 40, 40, -200, worldWidth, worldHeight);
 entityManager.add(enemy2);
-// const enemy3 = new Enemy(1200, 800, 40, 40, 150, worldWidth, worldHeight);
-// entityManager.add(enemy3);
 
 const input = new Input();
 const camera = new Camera(canvas.width, canvas.height, worldWidth, worldHeight);
@@ -69,9 +67,13 @@ let lastFpsUpdate = performance.now();
 let lastTime = performance.now();
 
 function update(deltaSec) {
-    camera.follow(player);
+    // 1. Ввод уже получен через input.getState()
+    // 2. Физика и коллизии
     entityManager.update(deltaSec, input.getState(), tileMap);
+    // 3. Камера следует за игроком ПОСЛЕ физики
+    camera.follow(player);
 
+    // Столкновения игрока с врагами
     const enemies = entityManager.getEntitiesByType(Enemy);
     for (const enemy of enemies) {
         if (player.collidesWith(enemy)) {
