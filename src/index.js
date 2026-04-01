@@ -6,6 +6,7 @@ import { EntityManager } from './game/EntityManager';
 import { Camera } from './game/Camera';
 import { ControlPanel } from './ui/ControlPanel';
 import { TileMap } from './game/TileMap';
+import { ParticleSystem } from './game/ParticleSystem';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -38,13 +39,15 @@ const worldWidth = tileMap.width;
 const worldHeight = tileMap.height;
 
 const entityManager = new EntityManager();
+const particleSystem = new ParticleSystem();
 
 // Игрок
 const player = new Player(
     worldWidth / 2 - 25,
     worldHeight / 2 - 100,
     50, 50,
-    300, 400, worldWidth, worldHeight
+    300, 400, worldWidth, worldHeight,
+    particleSystem
 );
 entityManager.add(player);
 
@@ -67,13 +70,10 @@ let lastFpsUpdate = performance.now();
 let lastTime = performance.now();
 
 function update(deltaSec) {
-    // 1. Ввод уже получен через input.getState()
-    // 2. Физика и коллизии
     entityManager.update(deltaSec, input.getState(), tileMap);
-    // 3. Камера следует за игроком ПОСЛЕ физики
+    particleSystem.update(deltaSec);
     camera.follow(player);
 
-    // Столкновения игрока с врагами
     const enemies = entityManager.getEntitiesByType(Enemy);
     for (const enemy of enemies) {
         if (player.collidesWith(enemy)) {
@@ -91,6 +91,7 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     tileMap.draw(ctx, camera);
     entityManager.draw(ctx, camera);
+    particleSystem.draw(ctx, camera);
 }
 
 function gameLoop(now) {
