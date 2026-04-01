@@ -2,7 +2,7 @@ import { GameObject } from './GameObject';
 
 /**
  * Класс игрока. Управляется стрелками, имеет гравитацию и прыжки.
- * Использует проекцию движения (sweep) для точных коллизий.
+ * Использует разбиение движения на подшаги для точных коллизий.
  */
 export class Player extends GameObject {
     /**
@@ -34,17 +34,14 @@ export class Player extends GameObject {
      * @param {TileMap} tileMap - карта тайлов для коллизий
      */
     update(deltaTime, input, entities, tileMap) {
-        // --- Горизонтальное движение с проекцией ---
+        // --- Горизонтальное движение ---
         let moveX = 0;
         if (input.ArrowLeft) moveX = -1;
         if (input.ArrowRight) moveX = 1;
         this.vx = moveX * this.speed;
         const dx = this.vx * deltaTime;
-        const newX = this.x + dx;
-
-        // Проверяем коллизию по X до перемещения
-        const xStep = this.checkCollisionX(newX, this.y, this.width, this.height, tileMap);
-        this.x += xStep;
+        // Разбиваем горизонтальное перемещение на подшаги
+        this.x = this.moveWithSubsteps(this.x, dx, this.y, this.width, this.height, tileMap, 'x');
 
         // --- Прыжок ---
         if (input.ArrowUp && this.isOnGround) {
@@ -52,17 +49,15 @@ export class Player extends GameObject {
             this.isOnGround = false;
         }
 
-        // --- Вертикальное движение с проекцией ---
+        // --- Вертикальное движение ---
         if (!this.isOnGround) {
             this.vy += this.gravity * deltaTime;
         } else {
             this.vy = 0;
         }
         const dy = this.vy * deltaTime;
-        const newY = this.y + dy;
-
-        const yStep = this.checkCollisionY(this.x, newY, this.width, this.height, tileMap);
-        this.y += yStep;
+        // Разбиваем вертикальное перемещение на подшаги
+        this.y = this.moveWithSubsteps(this.y, dy, this.x, this.width, this.height, tileMap, 'y');
 
         // Определяем, на земле ли игрок (проверяем тайл под ногами)
         if (this.vy >= 0) {
@@ -83,23 +78,60 @@ export class Player extends GameObject {
     }
 
     /**
-     * Проекция движения по X.
-     * Возвращает реальное смещение (dx), которое безопасно.
-     * @param {number} newX - желаемая новая X
+     * Разбивает движение на подшаги, чтобы избежать пропуска коллизий.
+     * @param {number} start - начальная координата (x или y)
+     * @param {number} delta - полное приращение
+     * @param {number} other - вторая координата (y или x) для проверки коллизий
+     * @param {number} w - ширина
+     * @param {number} h - высота
+     * @param {TileMap} tileMap
+     * @param {string} axis - 'x' или 'y'
+     * @returns {number} скорректированная координата
+     */
+    moveWithSubsteps(start, delta, other, w, h, tileMap, axis) {
+        if (delta === 0) return start;
+        const steps = 4; // Количество подшагов
+        const stepDelta = delta / steps;
+        let current = start;
+        for (let i = 0; i < steps; i++) {
+            const next = current + stepDelta;
+            let collision = false;
+            if (axis === 'x') {
+                const move = next - current;
+                const corrected = this.checkCollisionX(current, next, other, w, h, tileMap, move);
+                if (Math.abs(corrected - next) > 0.001) collision = true;
+                current = corrected;
+            } else {
+                const move = next - current;
+                const corrected = this.checkCollisionY(current, next, other, w, h, tileMap, move);
+                if (Math.abs(corrected - next) > 0.001) collision = true;
+                current = corrected;
+            }
+            // Если на каком-то подшаге произошла коллизия, прекращаем движение (останавливаемся)
+            if (collision) break;
+        }
+        return current;
+    }
+
+    /**
+     * Проверка коллизии по X для одного подшага.
+     * @param {number} currentX - текущая X
+     * @param {number} newX - желаемая X
      * @param {number} y - текущая Y
      * @param {number} w - ширина
      * @param {number} h - высота
      * @param {TileMap} tileMap
-     * @returns {number} безопасное приращение X
+     * @param {number} move - полное приращение X
+     * @returns {number} скорректированная X
      */
-    checkCollisionX(newX, y, w, h, tileMap) {
+    checkCollisionX(currentX, newX, y, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
         const leftTile = Math.floor(newX / tileW);
         const rightTile = Math.floor((newX + w - 1) / tileW);
         const topTile = Math.floor(y / tileH);
         const bottomTile = Math.floor((y + h - 1) / tileH);
-        let move = newX - this.x;
+        let resolvedX = newX;
 
         for (let row = topTile; row <= bottomTile; row++) {
             for (let col = leftTile; col <= rightTile; col++) {
@@ -108,35 +140,35 @@ export class Player extends GameObject {
                     const tileLeft = col * tileW;
                     const tileRight = tileLeft + tileW;
                     if (move > 0) {
-                        // движение вправо
-                        move = Math.min(move, tileLeft - this.x - w);
+                        resolvedX = Math.min(resolvedX, tileLeft - w);
                     } else if (move < 0) {
-                        // движение влево
-                        move = Math.max(move, tileRight - this.x);
+                        resolvedX = Math.max(resolvedX, tileRight);
                     }
                 }
             }
         }
-        return move;
+        return resolvedX;
     }
 
     /**
-     * Проекция движения по Y.
+     * Проверка коллизии по Y для одного подшага.
+     * @param {number} currentY - текущая Y
+     * @param {number} newY - желаемая Y
      * @param {number} x - текущая X
-     * @param {number} newY - желаемая новая Y
      * @param {number} w - ширина
      * @param {number} h - высота
      * @param {TileMap} tileMap
-     * @returns {number} безопасное приращение Y
+     * @param {number} move - полное приращение Y
+     * @returns {number} скорректированная Y
      */
-    checkCollisionY(x, newY, w, h, tileMap) {
+    checkCollisionY(currentY, newY, x, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
         const leftTile = Math.floor(x / tileW);
         const rightTile = Math.floor((x + w - 1) / tileW);
         const topTile = Math.floor(newY / tileH);
         const bottomTile = Math.floor((newY + h - 1) / tileH);
-        let move = newY - this.y;
+        let resolvedY = newY;
 
         for (let row = topTile; row <= bottomTile; row++) {
             for (let col = leftTile; col <= rightTile; col++) {
@@ -145,15 +177,13 @@ export class Player extends GameObject {
                     const tileTop = row * tileH;
                     const tileBottom = tileTop + tileH;
                     if (move > 0) {
-                        // падение
-                        move = Math.min(move, tileTop - this.y - h);
+                        resolvedY = Math.min(resolvedY, tileTop - h);
                     } else if (move < 0) {
-                        // подъём
-                        move = Math.max(move, tileBottom - this.y);
+                        resolvedY = Math.max(resolvedY, tileBottom);
                     }
                 }
             }
         }
-        return move;
+        return resolvedY;
     }
 }
