@@ -1,14 +1,23 @@
 import { Enemy } from '../game/Enemy';
 
 export class ControlPanel {
-    constructor(entityManager, player, canvas, camera, worldWidth, worldHeight) {
+    /**
+     * @param {EntityManager} entityManager
+     * @param {Player} player
+     * @param {HTMLCanvasElement} canvas
+     * @param {Camera} camera
+     * @param {number} worldWidth
+     * @param {number} worldHeight
+     * @param {Animation} enemyWalkAnim - анимация ходьбы для новых врагов
+     */
+    constructor(entityManager, player, canvas, camera, worldWidth, worldHeight, enemyWalkAnim) {
         this.entityManager = entityManager;
         this.player = player;
         this.canvas = canvas;
         this.camera = camera;
         this.worldWidth = worldWidth;
         this.worldHeight = worldHeight;
-
+        this.enemyWalkAnim = enemyWalkAnim;
         this.init();
     }
 
@@ -19,9 +28,7 @@ export class ControlPanel {
         this.playerHeightSlider = document.getElementById('playerHeight');
         this.playerYSlider = document.getElementById('playerY');
         this.resetPlayerPosBtn = document.getElementById('resetPlayerPos');
-
         this.addEnemyBtn = document.getElementById('addEnemy');
-
         this.enemiesCountSpan = document.getElementById('enemiesCount');
         this.enemiesListContainer = document.getElementById('enemiesList');
 
@@ -31,22 +38,15 @@ export class ControlPanel {
         this.playerHeightSlider.value = this.player.height;
         this.playerYSlider.value = this.player.y;
 
-        // Обработчики игрока
-        this.playerSpeedSlider.addEventListener('input', (e) => {
-            this.player.speed = parseInt(e.target.value);
-        });
-        this.playerJumpSlider.addEventListener('input', (e) => {
-            this.player.jumpForce = parseInt(e.target.value);
-        });
+        this.playerSpeedSlider.addEventListener('input', (e) => { this.player.speed = parseInt(e.target.value); });
+        this.playerJumpSlider.addEventListener('input', (e) => { this.player.jumpForce = parseInt(e.target.value); });
         this.playerWidthSlider.addEventListener('input', (e) => {
             const newWidth = parseInt(e.target.value);
             const delta = newWidth - this.player.width;
             this.player.width = newWidth;
             this.player.x -= delta / 2;
             if (this.player.x < 0) this.player.x = 0;
-            if (this.player.x + this.player.width > this.worldWidth) {
-                this.player.x = this.worldWidth - this.player.width;
-            }
+            if (this.player.x + this.player.width > this.worldWidth) this.player.x = this.worldWidth - this.player.width;
         });
         this.playerHeightSlider.addEventListener('input', (e) => {
             const newHeight = parseInt(e.target.value);
@@ -54,39 +54,29 @@ export class ControlPanel {
             this.player.height = newHeight;
             this.player.y -= delta;
             if (this.player.y < 0) this.player.y = 0;
-            if (this.player.y + this.player.height > this.worldHeight) {
-                this.player.y = this.worldHeight - this.player.height;
-            }
+            if (this.player.y + this.player.height > this.worldHeight) this.player.y = this.worldHeight - this.player.height;
             this.playerYSlider.value = this.player.y;
         });
         this.playerYSlider.addEventListener('input', (e) => {
             let newY = parseInt(e.target.value);
             if (isNaN(newY)) newY = 0;
             if (newY < 0) newY = 0;
-            if (newY + this.player.height > this.worldHeight) {
-                newY = this.worldHeight - this.player.height;
-            }
+            if (newY + this.player.height > this.worldHeight) newY = this.worldHeight - this.player.height;
             this.player.y = newY;
         });
         this.resetPlayerPosBtn.addEventListener('click', () => {
             this.player.x = this.worldWidth / 2 - this.player.width / 2;
             this.player.y = this.worldHeight / 2 - this.player.height / 2;
             if (this.player.x < 0) this.player.x = 0;
-            if (this.player.x + this.player.width > this.worldWidth) {
-                this.player.x = this.worldWidth - this.player.width;
-            }
+            if (this.player.x + this.player.width > this.worldWidth) this.player.x = this.worldWidth - this.player.width;
             if (this.player.y < 0) this.player.y = 0;
-            if (this.player.y + this.player.height > this.worldHeight) {
-                this.player.y = this.worldHeight - this.player.height;
-            }
+            if (this.player.y + this.player.height > this.worldHeight) this.player.y = this.worldHeight - this.player.height;
             this.playerYSlider.value = this.player.y;
         });
 
         this.addEnemyBtn.addEventListener('click', () => this.addEnemy());
-
         this.renderEnemiesList();
 
-        // Синхронизация слайдера Y игрока
         setInterval(() => {
             if (this.playerYSlider && document.activeElement !== this.playerYSlider) {
                 this.playerYSlider.value = this.player.y;
@@ -99,15 +89,13 @@ export class ControlPanel {
         const viewRight = this.camera.x + this.canvas.width;
         const viewTop = this.camera.y;
         const viewBottom = this.camera.y + this.canvas.height;
-
         const margin = 50;
         let x = viewLeft + margin + Math.random() * (this.canvas.width - 2 * margin);
         let y = viewTop + margin + Math.random() * (this.canvas.height - 2 * margin);
-
         x = Math.min(Math.max(x, 0), this.worldWidth - 40);
         y = Math.min(Math.max(y, 0), this.worldHeight - 40);
-
-        const newEnemy = new Enemy(x, y, 40, 40, 200, this.worldWidth, this.worldHeight);
+        // Используем сохранённую анимацию
+        const newEnemy = new Enemy(x, y, 40, 40, 200, this.worldWidth, this.worldHeight, this.enemyWalkAnim);
         this.entityManager.add(newEnemy);
         this.renderEnemiesList();
     }
@@ -135,7 +123,6 @@ export class ControlPanel {
                 <button class="delete-enemy">Удалить</button>
             </div>
         `;
-
         const xInput = div.querySelector('.enemy-x');
         const yInput = div.querySelector('.enemy-y');
         const wInput = div.querySelector('.enemy-w');
@@ -178,7 +165,6 @@ export class ControlPanel {
             this.entityManager.remove(enemy);
             this.renderEnemiesList();
         });
-
         return div;
     }
 }
