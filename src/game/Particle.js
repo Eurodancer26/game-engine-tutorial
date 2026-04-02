@@ -43,10 +43,9 @@ export class Particle {
      */
     draw(ctx, camera) {
         const screenPos = camera.apply(this.x, this.y);
-        const alpha = Math.min(1, this.lifetime / this.maxLifetime);
-        ctx.globalAlpha = alpha;
+        // Защита от некорректных координат
+        if (isNaN(screenPos.x) || isNaN(screenPos.y)) return;
         ctx.fillStyle = this.color;
         ctx.fillRect(screenPos.x, screenPos.y, this.size, this.size);
-        ctx.globalAlpha = 1;
     }
 }

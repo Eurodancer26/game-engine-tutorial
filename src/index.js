@@ -15,7 +15,7 @@ import { AssetLoader } from './utils/AssetLoader';
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- Тайловая карта (без изменений) ---
+// --- Тайловая карта ---
 const tileset = { 1: '#555', 2: '#888', 3: '#aaa' };
 const mapData = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -42,7 +42,7 @@ const entityManager = new EntityManager();
 const particleSystem = new ParticleSystem();
 const soundManager = new SoundManager();
 
-// Активация аудио после первого действия пользователя
+// --- Активация звука после действия пользователя ---
 let audioActivated = false;
 function activateAudio() {
     if (!audioActivated) {
@@ -55,15 +55,26 @@ function activateAudio() {
 window.addEventListener('keydown', activateAudio);
 window.addEventListener('click', activateAudio);
 
-/**
- * Вспомогательная функция для создания спрайт-листа в виде dataURL (для демонстрации загрузки).
- * В реальном проекте здесь будут URL-адреса PNG-файлов.
- * @param {number} frameWidth
- * @param {number} frameHeight
- * @param {number} framesCount
- * @param {Function} drawFrame
- * @returns {string} dataURL изображения
- */
+// --- Редактор ---
+let editMode = false;
+let selectedTileId = 1;
+let painting = false;
+let camera = null;
+let resourcesLoaded = false;
+
+function paintTileFromMouseEvent(e) {
+    if (!editMode || !resourcesLoaded || !camera || !tileMap) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    let mouseX = (e.clientX - rect.left) * scaleX;
+    let mouseY = (e.clientY - rect.top) * scaleY;
+    const worldX = mouseX + camera.x;
+    const worldY = mouseY + camera.y;
+    tileMap.setTileAt(worldX, worldY, selectedTileId);
+}
+
+// --- Загрузка спрайтов ---
 function createSpriteDataURL(frameWidth, frameHeight, framesCount, drawFrame) {
     const canvas = document.createElement('canvas');
     canvas.width = frameWidth * framesCount;
@@ -78,7 +89,6 @@ function createSpriteDataURL(frameWidth, frameHeight, framesCount, drawFrame) {
     return canvas.toDataURL();
 }
 
-// Генерация dataURL для спрайт-листов
 const playerSpriteURL = createSpriteDataURL(50, 50, 4, (ctx, frame) => {
     if (frame === 0) {
         ctx.fillStyle = '#0f0';
@@ -123,12 +133,10 @@ const enemySpriteURL = createSpriteDataURL(40, 40, 2, (ctx, frame) => {
     }
 });
 
-// Асинхронная загрузка изображений
 Promise.all([
     AssetLoader.loadImage(playerSpriteURL),
     AssetLoader.loadImage(enemySpriteURL)
 ]).then(([playerImg, enemyImg]) => {
-    // Создаём спрайты и анимации
     const playerSprite = new Sprite(playerImg, 50, 50);
     const idleAnim = new Animation(playerSprite, [0], 0.2, true);
     const runAnim = new Animation(playerSprite, [1, 2], 0.1, true);
@@ -137,7 +145,6 @@ Promise.all([
     const enemySprite = new Sprite(enemyImg, 40, 40);
     const enemyWalkAnim = new Animation(enemySprite, [0, 1], 0.2, true);
 
-    // Создаём игрока
     const player = new Player(
         worldWidth / 2 - 25,
         worldHeight / 2 - 100,
@@ -149,17 +156,50 @@ Promise.all([
     );
     entityManager.add(player);
 
-    // Создаём врагов
     const enemy1 = new Enemy(100, 100, 40, 40, 200, worldWidth, worldHeight, enemyWalkAnim);
     entityManager.add(enemy1);
     const enemy2 = new Enemy(500, 300, 40, 40, -200, worldWidth, worldHeight, enemyWalkAnim);
     entityManager.add(enemy2);
 
     const input = new Input();
-    const camera = new Camera(canvas.width, canvas.height, worldWidth, worldHeight);
+    camera = new Camera(canvas.width, canvas.height, worldWidth, worldHeight);
     const controlPanel = new ControlPanel(entityManager, player, canvas, camera, worldWidth, worldHeight, enemyWalkAnim);
 
-    // UI
+    // --- Редактор: кнопки и обработчики ---
+    const toggleEditBtn = document.getElementById('toggleEditMode');
+    const selectedTileSelect = document.getElementById('selectedTile');
+    const editModeStatus = document.getElementById('editModeStatus');
+
+    toggleEditBtn.addEventListener('click', () => {
+        editMode = !editMode;
+        toggleEditBtn.textContent = editMode ? 'Выключить режим редактирования' : 'Включить режим редактирования';
+        editModeStatus.textContent = `Режим: ${editMode ? 'ВКЛ (рисуйте тайлы)' : 'выкл'}`;
+        canvas.style.cursor = editMode ? 'crosshair' : 'default';
+    });
+
+    selectedTileSelect.addEventListener('change', (e) => {
+        selectedTileId = parseInt(e.target.value);
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (!editMode || !resourcesLoaded) return;
+        painting = true;
+        paintTileFromMouseEvent(e);
+        e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!editMode || !painting || !resourcesLoaded) return;
+        paintTileFromMouseEvent(e);
+        e.preventDefault();
+    });
+    window.addEventListener('mouseup', () => {
+        painting = false;
+    });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    resourcesLoaded = true;
+
+    // --- Игровой цикл ---
     let collisionCount = 0;
     const collisionSpan = document.getElementById('collisionCount');
     const fpsSpan = document.getElementById('fpsValue');
@@ -168,25 +208,29 @@ Promise.all([
     let lastTime = performance.now();
 
     function update(deltaSec) {
-        entityManager.update(deltaSec, input.getState(), tileMap);
+        // Частицы обновляются всегда, независимо от режима
         particleSystem.update(deltaSec);
-        camera.follow(player);
 
-        const enemies = entityManager.getEntitiesByType(Enemy);
-        for (const enemy of enemies) {
-            if (player.collidesWith(enemy)) {
-                collisionCount++;
-                collisionSpan.textContent = collisionCount;
-                player.color = '#ff0';
-                setTimeout(() => { player.color = '#0f0'; }, 200);
-                player.x = worldWidth / 2 - player.width / 2;
-                player.y = worldHeight / 2 - player.height / 2;
-                soundManager.playHit();
+        if (!editMode) {
+            entityManager.update(deltaSec, input.getState(), tileMap);
+        }
+        if (camera) camera.follow(player);
 
-                // Эффект искр
-                const sparkX = player.x + player.width / 2;
-                const sparkY = player.y + player.height / 2;
-                particleSystem.createSparkCloud(sparkX, sparkY, 20);
+        if (!editMode && resourcesLoaded) {
+            const enemies = entityManager.getEntitiesByType(Enemy);
+            for (const enemy of enemies) {
+                if (player.collidesWith(enemy)) {
+                    collisionCount++;
+                    collisionSpan.textContent = collisionCount;
+                    player.color = '#ff0';
+                    setTimeout(() => { player.color = '#0f0'; }, 200);
+                    player.x = worldWidth / 2 - player.width / 2;
+                    player.y = worldHeight / 2 - player.height / 2;
+                    soundManager.playHit();
+                    const sparkX = player.x + player.width / 2;
+                    const sparkY = player.y + player.height / 2;
+                    particleSystem.createSparkCloud(sparkX, sparkY, 20);
+                }
             }
         }
     }
@@ -194,7 +238,9 @@ Promise.all([
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         tileMap.draw(ctx, camera);
-        entityManager.draw(ctx, camera);
+        if (!editMode && resourcesLoaded) {
+            entityManager.draw(ctx, camera);
+        }
         particleSystem.draw(ctx, camera);
     }
 

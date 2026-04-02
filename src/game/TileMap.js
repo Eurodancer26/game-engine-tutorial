@@ -35,7 +35,7 @@ export class TileMap {
         for (let row = startRow; row <= endRow; row++) {
             for (let col = startCol; col <= endCol; col++) {
                 const tileId = this.mapData[row][col];
-                if (tileId === 0) continue; // пустота, не рисуем
+                if (tileId === 0) continue;
                 const color = this.tileset[tileId];
                 if (!color) continue;
                 const worldX = col * this.tileWidth;
@@ -63,6 +63,23 @@ export class TileMap {
     }
 
     /**
+     * Устанавливает ID тайла в указанных мировых координатах.
+     * @param {number} worldX
+     * @param {number} worldY
+     * @param {number} tileId - ID тайла (0 для стирания)
+     * @returns {boolean} true, если координаты в пределах карты
+     */
+    setTileAt(worldX, worldY, tileId) {
+        const col = Math.floor(worldX / this.tileWidth);
+        const row = Math.floor(worldY / this.tileHeight);
+        if (row < 0 || row >= this.mapData.length || col < 0 || col >= this.mapData[0].length) {
+            return false;
+        }
+        this.mapData[row][col] = tileId;
+        return true;
+    }
+
+    /**
      * Проверяет, является ли тайл твёрдым (препятствием).
      * @param {number} tileId
      * @returns {boolean}
@@ -87,13 +104,9 @@ export class TileMap {
 
         for (let row = startRow; row <= endRow; row++) {
             for (let col = startCol; col <= endCol; col++) {
-                if (row < 0 || row >= this.mapData.length || col < 0 || col >= this.mapData[0].length) {
-                    continue;
-                }
+                if (row < 0 || row >= this.mapData.length || col < 0 || col >= this.mapData[0].length) continue;
                 const tileId = this.mapData[row][col];
-                if (this.isSolidTile(tileId)) {
-                    return true;
-                }
+                if (this.isSolidTile(tileId)) return true;
             }
         }
         return false;

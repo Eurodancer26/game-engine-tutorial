@@ -18,6 +18,7 @@ export class ParticleSystem {
     }
 
     draw(ctx, camera) {
+        if (!camera) return;
         for (const p of this.particles) {
             p.draw(ctx, camera);
         }
@@ -25,38 +26,38 @@ export class ParticleSystem {
 
     /**
      * Создаёт облачко пыли при приземлении.
-     * @param {number} x
-     * @param {number} y
-     * @param {number} count
+     * @param {number} x - мировая X
+     * @param {number} y - мировая Y
+     * @param {number} count - количество частиц
      */
-    createDustCloud(x, y, count = 8) {
+    createDustCloud(x, y, count = 12) {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = 50 + Math.random() * 100;
+            const speed = 80 + Math.random() * 120;
             const vx = Math.cos(angle) * speed;
-            const vy = Math.sin(angle) * speed - 30;
-            const lifetime = 0.3 + Math.random() * 0.4;
-            const size = 4 + Math.random() * 6;
-            const color = `hsl(${30 + Math.random() * 20}, 70%, 50%)`;
+            const vy = Math.sin(angle) * speed - 40;
+            const lifetime = 0.4 + Math.random() * 0.5;
+            const size = 6 + Math.random() * 10;
+            const color = `hsl(${30 + Math.random() * 20}, 80%, 65%)`;
             this.add(new Particle(x, y, vx, vy, lifetime, color, size));
         }
     }
 
     /**
      * Создаёт облачко искр при столкновении с врагом.
-     * @param {number} x
-     * @param {number} y
-     * @param {number} count
+     * @param {number} x - мировая X
+     * @param {number} y - мировая Y
+     * @param {number} count - количество частиц
      */
-    createSparkCloud(x, y, count = 20) {
+    createSparkCloud(x, y, count = 25) {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const speed = 100 + Math.random() * 150;
+            const speed = 150 + Math.random() * 200;
             const vx = Math.cos(angle) * speed;
             const vy = Math.sin(angle) * speed;
-            const lifetime = 0.2 + Math.random() * 0.3;
-            const size = 3 + Math.random() * 5;
-            const color = `hsl(${20 + Math.random() * 40}, 100%, 60%)`; // красные/оранжевые оттенки
+            const lifetime = 0.3 + Math.random() * 0.4;
+            const size = 5 + Math.random() * 9;
+            const color = `hsl(${20 + Math.random() * 40}, 100%, 70%)`;
             this.add(new Particle(x, y, vx, vy, lifetime, color, size));
         }
     }

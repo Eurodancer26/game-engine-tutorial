@@ -7,10 +7,8 @@
 </head>
 <body>
     <div class="app">
-        <!-- Игровая область -->
         <div class="game-area">
             <canvas id="gameCanvas" class="canvas" width="800" height="600"></canvas>
-            <!-- Статистика (счётчик, FPS) -->
             <div class="ui">
                 <div class="ui__stats">
                     <div class="ui__stat">Столкновений: <span id="collisionCount">0</span></div>
@@ -18,10 +16,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- Панель управления (без платформ) -->
         <div class="control-panel">
-            <!-- Секция: Игрок -->
             <div class="control-panel__section">
                 <h3>Игрок</h3>
                 <label>Скорость: <input type="range" id="playerSpeed" min="0" max="600" step="10"></label>
@@ -31,12 +26,24 @@
                 <label>Y позиция: <input type="range" id="playerY" min="0" max="560" step="5"></label>
                 <button id="resetPlayerPos">Сбросить позицию</button>
             </div>
-
-            <!-- Секция: Враги -->
             <div class="control-panel__section">
                 <h3>Враги (<span id="enemiesCount">0</span>)</h3>
                 <button id="addEnemy">+ Добавить врага</button>
                 <div id="enemiesList" class="control-panel__list"></div>
+            </div>
+            <div class="control-panel__section">
+                <h3>Редактор уровней</h3>
+                <button id="toggleEditMode">Включить режим редактирования</button>
+                <div style="margin-top: 8px;">
+                    <label>Выбрать тайл:</label>
+                    <select id="selectedTile">
+                        <option value="1">Тайл 1 (земля)</option>
+                        <option value="2">Тайл 2 (платформа)</option>
+                        <option value="3">Тайл 3 (декор)</option>
+                        <option value="0">Стереть (0)</option>
+                    </select>
+                </div>
+                <div id="editModeStatus" style="margin-top: 5px; font-size: 12px; color: #aaa;">Режим: выкл</div>
             </div>
         </div>
     </div>
