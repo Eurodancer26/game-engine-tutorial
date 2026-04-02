@@ -1,66 +1,58 @@
-/**
- * Простой менеджер звуков с использованием Web Audio API.
- * Генерирует звуки программно для демонстрации.
- */
 export class SoundManager {
     constructor() {
         this.audioContext = null;
+        this.initialized = false;
     }
 
-    /**
-     * Инициализация аудиоконтекста (вызывается при первом воспроизведении).
-     * Автоматически возобновляет контекст, если он был приостановлен браузером.
-     */
-    init() {
+    async resume() {
         if (!this.audioContext) {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+            await this.audioContext.resume();
         }
+        this.initialized = true;
     }
 
-    /**
-     * Звук прыжка (высокий тон).
-     */
+    _ensureReady() {
+        if (!this.initialized || !this.audioContext || this.audioContext.state !== 'running') {
+            console.warn('AudioContext не готов. Пропускаем звук.');
+            return false;
+        }
+        return true;
+    }
+
     playJump() {
-        this.init();
+        if (!this._ensureReady()) return;
         const now = this.audioContext.currentTime;
         const osc = this.audioContext.createOscillator();
         const gain = this.audioContext.createGain();
         osc.connect(gain);
         gain.connect(this.audioContext.destination);
-        osc.frequency.value = 523.25; // нота C5
+        osc.frequency.value = 523.25;
         gain.gain.value = 0.3;
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.3);
         osc.stop(now + 0.3);
     }
 
-    /**
-     * Звук приземления (низкий тон).
-     */
     playLand() {
-        this.init();
+        if (!this._ensureReady()) return;
         const now = this.audioContext.currentTime;
         const osc = this.audioContext.createOscillator();
         const gain = this.audioContext.createGain();
         osc.connect(gain);
         gain.connect(this.audioContext.destination);
-        osc.frequency.value = 220; // нота A3
+        osc.frequency.value = 220;
         gain.gain.value = 0.2;
         osc.start();
         gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.2);
         osc.stop(now + 0.2);
     }
 
-    /**
-     * Звук столкновения с врагом (два коротких тона).
-     */
     playHit() {
-        this.init();
+        if (!this._ensureReady()) return;
         const now = this.audioContext.currentTime;
-        // первый тон
         const osc1 = this.audioContext.createOscillator();
         const gain1 = this.audioContext.createGain();
         osc1.connect(gain1);
@@ -70,7 +62,7 @@ export class SoundManager {
         osc1.start();
         gain1.gain.exponentialRampToValueAtTime(0.00001, now + 0.1);
         osc1.stop(now + 0.1);
-        // второй тон
+
         const osc2 = this.audioContext.createOscillator();
         const gain2 = this.audioContext.createGain();
         osc2.connect(gain2);
