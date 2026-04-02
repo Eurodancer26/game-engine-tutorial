@@ -76,16 +76,28 @@ export class Player extends GameObject {
         }
         this.wasOnGround = this.isOnGround;
 
+        // --- Установка флага отражения спрайта ---
+        if (moveX !== 0) {
+            const flipX = moveX < 0; // true если влево
+            if (this.animation) {
+                this.animation.setFlipX(flipX);
+            }
+        }
+
         // --- Выбор анимации ---
         if (!this.isOnGround) {
             if (this.animation !== this.jumpAnim) {
                 this.animation = this.jumpAnim;
                 this.jumpAnim.reset();
+                if (moveX !== 0) {
+                    this.animation.setFlipX(moveX < 0);
+                }
             }
         } else {
             if (moveX !== 0) {
                 if (this.animation !== this.runAnim) {
                     this.animation = this.runAnim;
+                    this.animation.setFlipX(moveX < 0);
                 }
             } else {
                 if (this.animation !== this.idleAnim) {
@@ -104,6 +116,17 @@ export class Player extends GameObject {
         if (this.y + this.height > this.worldHeight) this.y = this.worldHeight - this.height;
     }
 
+    /**
+     * Разбивает движение на подшаги для точных коллизий.
+     * @param {number} start
+     * @param {number} delta
+     * @param {number} other
+     * @param {number} w
+     * @param {number} h
+     * @param {TileMap} tileMap
+     * @param {string} axis
+     * @returns {number}
+     */
     moveWithSubsteps(start, delta, other, w, h, tileMap, axis) {
         if (delta === 0) return start;
         const steps = 4;
@@ -128,6 +151,17 @@ export class Player extends GameObject {
         return current;
     }
 
+    /**
+     * Проверка коллизии по X для одного подшага.
+     * @param {number} currentX
+     * @param {number} newX
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @param {TileMap} tileMap
+     * @param {number} move
+     * @returns {number}
+     */
     checkCollisionX(currentX, newX, y, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
@@ -153,6 +187,17 @@ export class Player extends GameObject {
         return resolvedX;
     }
 
+    /**
+     * Проверка коллизии по Y для одного подшага.
+     * @param {number} currentY
+     * @param {number} newY
+     * @param {number} x
+     * @param {number} w
+     * @param {number} h
+     * @param {TileMap} tileMap
+     * @param {number} move
+     * @returns {number}
+     */
     checkCollisionY(currentY, newY, x, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;

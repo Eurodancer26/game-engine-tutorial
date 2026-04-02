@@ -11,11 +11,11 @@ export class Sprite {
         this.image = image;
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
-        this.columns = image.width / frameWidth;
+        this.columns = image.width / frameWidth; // количество кадров по горизонтали
     }
 
     /**
-     * Отрисовка конкретного кадра.
+     * Отрисовка конкретного кадра без отражения.
      * @param {CanvasRenderingContext2D} ctx
      * @param {number} x - экранная координата X
      * @param {number} y - экранная координата Y
@@ -31,5 +31,20 @@ export class Sprite {
             sx, sy, this.frameWidth, this.frameHeight,
             x, y, this.frameWidth, this.frameHeight
         );
+    }
+
+    /**
+     * Отрисовка кадра с горизонтальным отражением (flipX).
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} x - экранная координата X
+     * @param {number} y - экранная координата Y
+     * @param {number} frameIndex - индекс кадра
+     */
+    drawFrameFlipped(ctx, x, y, frameIndex) {
+        ctx.save();
+        ctx.translate(x + this.frameWidth, y);
+        ctx.scale(-1, 1);
+        this.drawFrame(ctx, 0, 0, frameIndex);
+        ctx.restore();
     }
 }

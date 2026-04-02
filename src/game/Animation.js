@@ -18,6 +18,15 @@ export class Animation {
         this.currentTime = 0;
         this.currentFrame = 0;
         this.playing = true;
+        this.flipX = false; // флаг отражения по горизонтали
+    }
+
+    /**
+     * Установить флаг отражения по горизонтали.
+     * @param {boolean} flip
+     */
+    setFlipX(flip) {
+        this.flipX = flip;
     }
 
     /**
@@ -50,14 +59,18 @@ export class Animation {
     }
 
     /**
-     * Отрисовать текущий кадр.
+     * Отрисовать текущий кадр с учётом флага отражения.
      * @param {CanvasRenderingContext2D} ctx
      * @param {number} x - экранная X
      * @param {number} y - экранная Y
      */
     draw(ctx, x, y) {
         const frame = this.getCurrentFrame();
-        this.sprite.drawFrame(ctx, x, y, frame);
+        if (this.flipX) {
+            this.sprite.drawFrameFlipped(ctx, x, y, frame);
+        } else {
+            this.sprite.drawFrame(ctx, x, y, frame);
+        }
     }
 
     /**
