@@ -14,8 +14,9 @@ export class Player extends GameObject {
      * @param {Animation} idleAnim
      * @param {Animation} runAnim
      * @param {Animation} jumpAnim
+     * @param {SoundManager} soundManager
      */
-    constructor(x, y, width, height, speed, jumpForce, worldWidth, worldHeight, particleSystem, idleAnim, runAnim, jumpAnim) {
+    constructor(x, y, width, height, speed, jumpForce, worldWidth, worldHeight, particleSystem, idleAnim, runAnim, jumpAnim, soundManager) {
         super(x, y, width, height, '#0f0');
         this.speed = speed;
         this.jumpForce = jumpForce;
@@ -30,7 +31,7 @@ export class Player extends GameObject {
         this.runAnim = runAnim;
         this.jumpAnim = jumpAnim;
         this.animation = idleAnim;
-        this.lastMoveX = 0;
+        this.soundManager = soundManager;
     }
 
     update(deltaTime, input, entities, tileMap) {
@@ -46,6 +47,7 @@ export class Player extends GameObject {
         if (input.ArrowUp && this.isOnGround) {
             this.vy = -this.jumpForce;
             this.isOnGround = false;
+            this.soundManager.playJump(); // звук прыжка
         }
 
         // --- Вертикальное движение ---
@@ -68,20 +70,19 @@ export class Player extends GameObject {
             this.isOnGround = false;
         }
 
-        // --- Эффект пыли при приземлении ---
+        // --- Эффект пыли и звук при приземлении ---
         if (!this.wasOnGround && this.isOnGround) {
             const dustX = this.x + this.width / 2;
             const dustY = this.y + this.height;
             this.particleSystem.createDustCloud(dustX, dustY, 12);
+            this.soundManager.playLand(); // звук приземления
         }
         this.wasOnGround = this.isOnGround;
 
-        // --- Установка флага отражения спрайта ---
+        // --- Флип спрайта ---
         if (moveX !== 0) {
-            const flipX = moveX < 0; // true если влево
-            if (this.animation) {
-                this.animation.setFlipX(flipX);
-            }
+            const flipX = moveX < 0;
+            if (this.animation) this.animation.setFlipX(flipX);
         }
 
         // --- Выбор анимации ---
@@ -89,9 +90,7 @@ export class Player extends GameObject {
             if (this.animation !== this.jumpAnim) {
                 this.animation = this.jumpAnim;
                 this.jumpAnim.reset();
-                if (moveX !== 0) {
-                    this.animation.setFlipX(moveX < 0);
-                }
+                if (moveX !== 0) this.animation.setFlipX(moveX < 0);
             }
         } else {
             if (moveX !== 0) {
@@ -106,7 +105,7 @@ export class Player extends GameObject {
             }
         }
 
-        // Обновляем текущую анимацию
+        // --- Обновление анимации ---
         this.updateAnimation(deltaTime);
 
         // --- Ограничения границами мира ---
