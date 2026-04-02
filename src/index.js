@@ -7,6 +7,9 @@ import { Camera } from './game/Camera';
 import { ControlPanel } from './ui/ControlPanel';
 import { TileMap } from './game/TileMap';
 import { ParticleSystem } from './game/ParticleSystem';
+import { Sprite } from './game/Sprite';
+import { Animation } from './game/Animation';
+import { createSpriteCanvas } from './utils/createSprite';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -41,17 +44,52 @@ const worldHeight = tileMap.height;
 const entityManager = new EntityManager();
 const particleSystem = new ParticleSystem();
 
-// Игрок
+// --- Генерация спрайт-листа и анимаций для игрока ---
+const playerSpriteCanvas = createSpriteCanvas(50, 50, 4, (ctx, frame) => {
+    if (frame === 0) {
+        ctx.fillStyle = '#0f0';
+        ctx.fillRect(0, 0, 50, 50);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, 20, 8, 8);
+        ctx.fillRect(32, 20, 8, 8);
+    } else if (frame === 1) {
+        ctx.fillStyle = '#2f2';
+        ctx.fillRect(0, 0, 50, 50);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, 25, 8, 8);
+        ctx.fillRect(32, 25, 8, 8);
+    } else if (frame === 2) {
+        ctx.fillStyle = '#4f4';
+        ctx.fillRect(0, 0, 50, 50);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, 15, 8, 8);
+        ctx.fillRect(32, 15, 8, 8);
+    } else if (frame === 3) {
+        ctx.fillStyle = '#ff0';
+        ctx.fillRect(0, 0, 50, 50);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, 20, 8, 8);
+        ctx.fillRect(32, 20, 8, 8);
+    }
+});
+const playerSprite = new Sprite(playerSpriteCanvas, 50, 50);
+
+const idleAnim = new Animation(playerSprite, [0], 0.2, true);
+const runAnim = new Animation(playerSprite, [1, 2], 0.1, true);
+const jumpAnim = new Animation(playerSprite, [3], 0.1, false);
+
+// --- Игрок ---
 const player = new Player(
     worldWidth / 2 - 25,
     worldHeight / 2 - 100,
     50, 50,
     300, 400, worldWidth, worldHeight,
-    particleSystem
+    particleSystem,
+    idleAnim, runAnim, jumpAnim
 );
 entityManager.add(player);
 
-// Враги
+// --- Враги ---
 const enemy1 = new Enemy(100, 100, 40, 40, 200, worldWidth, worldHeight);
 entityManager.add(enemy1);
 const enemy2 = new Enemy(500, 300, 40, 40, -200, worldWidth, worldHeight);

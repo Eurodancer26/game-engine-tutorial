@@ -6,13 +6,16 @@ export class Player extends GameObject {
      * @param {number} y
      * @param {number} width
      * @param {number} height
-     * @param {number} speed - горизонтальная скорость (пиксели/сек)
-     * @param {number} jumpForce - сила прыжка (положительная)
+     * @param {number} speed
+     * @param {number} jumpForce
      * @param {number} worldWidth
      * @param {number} worldHeight
-     * @param {ParticleSystem} particleSystem - ссылка на систему частиц
+     * @param {ParticleSystem} particleSystem
+     * @param {Animation} idleAnim
+     * @param {Animation} runAnim
+     * @param {Animation} jumpAnim
      */
-    constructor(x, y, width, height, speed, jumpForce, worldWidth, worldHeight, particleSystem) {
+    constructor(x, y, width, height, speed, jumpForce, worldWidth, worldHeight, particleSystem, idleAnim, runAnim, jumpAnim) {
         super(x, y, width, height, '#0f0');
         this.speed = speed;
         this.jumpForce = jumpForce;
@@ -23,6 +26,11 @@ export class Player extends GameObject {
         this.isOnGround = false;
         this.particleSystem = particleSystem;
         this.wasOnGround = false;
+        this.idleAnim = idleAnim;
+        this.runAnim = runAnim;
+        this.jumpAnim = jumpAnim;
+        this.animation = idleAnim;
+        this.lastMoveX = 0;
     }
 
     update(deltaTime, input, entities, tileMap) {
@@ -68,6 +76,27 @@ export class Player extends GameObject {
         }
         this.wasOnGround = this.isOnGround;
 
+        // --- Выбор анимации ---
+        if (!this.isOnGround) {
+            if (this.animation !== this.jumpAnim) {
+                this.animation = this.jumpAnim;
+                this.jumpAnim.reset();
+            }
+        } else {
+            if (moveX !== 0) {
+                if (this.animation !== this.runAnim) {
+                    this.animation = this.runAnim;
+                }
+            } else {
+                if (this.animation !== this.idleAnim) {
+                    this.animation = this.idleAnim;
+                }
+            }
+        }
+
+        // Обновляем текущую анимацию
+        this.updateAnimation(deltaTime);
+
         // --- Ограничения границами мира ---
         if (this.x < 0) this.x = 0;
         if (this.y < 0) this.y = 0;
@@ -75,17 +104,6 @@ export class Player extends GameObject {
         if (this.y + this.height > this.worldHeight) this.y = this.worldHeight - this.height;
     }
 
-    /**
-     * Разбивает движение на подшаги для точных коллизий.
-     * @param {number} start
-     * @param {number} delta
-     * @param {number} other
-     * @param {number} w
-     * @param {number} h
-     * @param {TileMap} tileMap
-     * @param {string} axis
-     * @returns {number}
-     */
     moveWithSubsteps(start, delta, other, w, h, tileMap, axis) {
         if (delta === 0) return start;
         const steps = 4;
@@ -110,17 +128,6 @@ export class Player extends GameObject {
         return current;
     }
 
-    /**
-     * Проверка коллизии по X для одного подшага.
-     * @param {number} currentX
-     * @param {number} newX
-     * @param {number} y
-     * @param {number} w
-     * @param {number} h
-     * @param {TileMap} tileMap
-     * @param {number} move
-     * @returns {number}
-     */
     checkCollisionX(currentX, newX, y, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
@@ -146,17 +153,6 @@ export class Player extends GameObject {
         return resolvedX;
     }
 
-    /**
-     * Проверка коллизии по Y для одного подшага.
-     * @param {number} currentY
-     * @param {number} newY
-     * @param {number} x
-     * @param {number} w
-     * @param {number} h
-     * @param {TileMap} tileMap
-     * @param {number} move
-     * @returns {number}
-     */
     checkCollisionY(currentY, newY, x, w, h, tileMap, move) {
         const tileW = tileMap.tileWidth;
         const tileH = tileMap.tileHeight;
