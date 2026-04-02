@@ -16,11 +16,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // --- Тайловая карта ---
-const tileset = {
-    1: '#555',
-    2: '#888',
-    3: '#aaa',
-};
+const tileset = { 1: '#555', 2: '#888', 3: '#aaa' };
 const mapData = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -79,7 +75,7 @@ const idleAnim = new Animation(playerSprite, [0], 0.2, true);
 const runAnim = new Animation(playerSprite, [1, 2], 0.1, true);
 const jumpAnim = new Animation(playerSprite, [3], 0.1, false);
 
-// --- Игрок с передачей soundManager ---
+// --- Игрок ---
 const player = new Player(
     worldWidth / 2 - 25,
     worldHeight / 2 - 100,
@@ -142,7 +138,12 @@ function update(deltaSec) {
             setTimeout(() => { player.color = '#0f0'; }, 200);
             player.x = worldWidth / 2 - player.width / 2;
             player.y = worldHeight / 2 - player.height / 2;
-            soundManager.playHit(); // звук столкновения
+            soundManager.playHit();
+
+            // Эффект искр при столкновении
+            const sparkX = player.x + player.width / 2;
+            const sparkY = player.y + player.height / 2;
+            particleSystem.createSparkCloud(sparkX, sparkY, 20);
         }
     }
 }
